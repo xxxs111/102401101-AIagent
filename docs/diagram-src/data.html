@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><title>数据模型与状态流转</title>
+<style>
+  body{margin:0;background:#fff;font-family:"Microsoft YaHei","PingFang SC",Arial,sans-serif;color:#1f2328}
+  .wrap{width:1000px;padding:26px 30px}
+  h2{font-size:20px;margin:0 0 4px}
+  h3{font-size:15px;margin:22px 0 10px;color:#5a6478}
+  .sub{color:#6b7280;font-size:13px;margin-bottom:16px}
+  table{border-collapse:collapse;width:100%;font-size:13px}
+  th{background:#f6f8fa;border:1px solid #d0d7de;padding:6px 10px;text-align:left}
+  td{border:1px solid #d0d7de;padding:6px 10px}
+  .k{display:inline-block;background:#f1f3f9;border-radius:4px;padding:1px 6px;font-family:Consolas,monospace;font-size:12px}
+  .sm{color:#6b7280}
+  .states{display:flex;align-items:center;gap:0;margin-top:6px}
+  .st{flex:1;border:2px solid #16a34a;background:#eafaf1;border-radius:12px;padding:12px 14px;text-align:center}
+  .st.done{border-color:#98a1b3;background:#f4f6fb}
+  .st b{display:block;font-size:15px;margin-bottom:4px}
+  .st small{color:#5a6478;font-size:12px;line-height:1.6;display:block}
+  .mid{width:190px;text-align:center;color:#5a6478;font-size:12px;line-height:1.5}
+  .mid .lbl{font-family:Consolas,monospace;color:#4353ff;font-size:11.5px}
+  .txt{display:flex;gap:14px;margin-top:18px}
+  .card{flex:1;border:1px solid #e9ecf3;border-radius:10px;padding:12px 14px;background:#fbfcfe;font-size:13px;line-height:1.7}
+  .card b{display:block;margin-bottom:6px;color:#4353ff}
+  .legend{margin-top:16px;font-size:12.5px;color:#6b7280;line-height:1.8;border-top:1px solid #eceff4;padding-top:12px}
+</style></head>
+<body><div class="wrap">
+  <h2>图 C　数据模型与状态流转</h2>
+  <div class="sub">一条信息（item）的字段设计，以及「进行中 ⇄ 已完成」的双向流转规则</div>
+
+  <h3>① 数据模型 item</h3>
+  <table>
+    <tr><th style="width:210px">字段</th><th style="width:150px">取值</th><th>说明</th></tr>
+    <tr><td><span class="k">id</span></td><td>1, 2, 3…</td><td>自增主键，<span class="k">generateId()</span> 取当前最大值 + 1</td></tr>
+    <tr><td><span class="k">type</span></td><td>lost / found</td><td>寻物 / 招领，决定表单文案与配色（玫瑰红 / 青绿）</td></tr>
+    <tr><td><span class="k">name</span> · <span class="k">category</span></td><td>校园卡 / 校园卡</td><td>名称 ≤ 30 字；分类为 9 项白名单</td></tr>
+    <tr><td><span class="k">time</span> · <span class="k">place</span></td><td>2026-10-06 / 三区田径场看台</td><td>日期不得晚于今天；地点 ≤ 50 字</td></tr>
+    <tr><td><span class="k">desc</span> · <span class="k">image</span></td><td>蓝色卡套… / http(s) 链接</td><td>描述 ≤ 200 字；图片用链接方式，可留空</td></tr>
+    <tr><td><span class="k">contactName</span> · <span class="k">contact</span></td><td>李同学 / 13800001234</td><td>联系方式支持手机号 / QQ / 微信 / 邮箱</td></tr>
+    <tr><td><span class="k">status</span></td><td>active / done</td><td>进行中 / 已完成，只允许这两种取值</td></tr>
+    <tr><td><span class="k">publisherKey</span></td><td>owner_xxx</td><td>本机发布者标识，决定是否显示管理按钮</td></tr>
+    <tr><td><span class="k">views</span> · <span class="k">createdAt</span> · <span class="k">updatedAt</span></td><td>26 / 时间戳</td><td>浏览数与时间戳，用于排序与"多久之前"</td></tr>
+  </table>
+
+  <h3>② 状态流转</h3>
+  <div class="states">
+    <div class="st">
+      <b>active　进行中</b>
+      <small>寻物 → 「寻找中」<br>招领 → 「待认领」<br>列表正常展示 · 显示联系入口</small>
+    </div>
+    <div class="mid">
+      <div class="lbl">updateStatus(id,'done')</div>
+      <div>➜</div>
+      <div class="lbl">updateStatus(id,'active')</div>
+      <div>◀</div>
+      非法状态值一律拒绝
+    </div>
+    <div class="st done">
+      <b>done　已完成</b>
+      <small>寻物 → 「已找到」<br>招领 → 「已归还」<br>列表置灰后置 · 隐藏联系入口</small>
+    </div>
+  </div>
+
+  <div class="txt">
+    <div class="card"><b>文案统一由一处输出</b>
+      <span class="k">Utils.statusOf(item)</span> 把 <span class="k">status × type</span> 映射成四种文案，
+      界面层只认这个函数，避免"寻找中 / 已找到 / 待认领 / 已归还"散落在十几个模板里。
+    </div>
+    <div class="card"><b>排序规则</b>
+      进行中在前，同状态按发布时间倒序。已完成的信息自动后置，
+      不会被新的已完结信息淹没有效信息。
+    </div>
+    <div class="card"><b>权限规则</b>
+      详情页与「我的发布」的管理按钮只在
+      <span class="k">publisherKey</span> 与本机标识一致时出现；地址栏直接进
+      <span class="k">#/edit/:id</span> 也会被拦下。
+    </div>
+  </div>
+
+  <div class="legend">
+    <b>被测试锁住的边界</b>：不存在 id 返回 <span class="k">null</span> 且数据不变 · 非法状态值拒绝执行 · 恢复操作可逆 · 更新状态会刷新 <span class="k">updatedAt</span>
+  </div>
+</div></body></html>

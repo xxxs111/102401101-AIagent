@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><title>分层架构</title>
+<style>
+  body{margin:0;background:#fff;font-family:"Microsoft YaHei","PingFang SC",Arial,sans-serif;color:#1f2328}
+  .wrap{width:900px;padding:28px 30px}
+  h2{font-size:20px;margin:0 0 4px}
+  .sub{color:#6b7280;font-size:13px;margin-bottom:20px}
+  .box{border:2px solid #4353ff;border-radius:12px;background:#eceeff;padding:14px 18px;text-align:center}
+  .box .t{font-weight:700;font-size:16px}
+  .box .d{font-size:13px;color:#4b5563;margin-top:4px;line-height:1.6}
+  .row{display:flex;gap:14px}
+  .row .box{flex:1}
+  .b2{border-color:#12a594;background:#e6f7f4}
+  .b3{border-color:#e5484d;background:#ffecec}
+  .b4{border-color:#6b7280;background:#f4f6fb}
+  .arrow{text-align:center;color:#98a1b3;font-size:20px;line-height:1;margin:8px 0}
+  .note{display:flex;gap:10px;margin-top:6px}
+  .note .tag{flex:1;font-size:12.5px;color:#4b5563;background:#f6f8fa;border:1px dashed #d0d7de;border-radius:8px;padding:8px 10px}
+  .legend{margin-top:16px;font-size:12.5px;color:#6b7280;border-top:1px solid #eceff4;padding-top:12px;line-height:1.8}
+  .k{display:inline-block;background:#f1f3f9;border-radius:4px;padding:1px 6px;font-family:Consolas,monospace;font-size:12px}
+</style></head>
+<body><div class="wrap">
+  <h2>图 A　「寻回」的分层架构</h2>
+  <div class="sub">界面层只碰 DOM，其余三层都是纯函数 —— 这是能写出单元测试的前提</div>
+
+  <div class="box">
+    <div class="t">index.html　界面骨架</div>
+    <div class="d">手机外框 · 顶部标题栏 · 底部 5 个 Tab · 主视图容器 <span class="k">#views</span></div>
+  </div>
+  <div class="arrow">▼ 渲染 / 事件</div>
+
+  <div class="box b2">
+    <div class="t">app.js　界面层</div>
+    <div class="d">哈希路由（<span class="k">#/detail/:id</span> 可直达）· 渲染调度 · 事件委托（<span class="k">data-act</span>）· 剪贴板</div>
+  </div>
+  <div class="arrow">▼ 调用 &nbsp;/&nbsp; 取模板</div>
+
+  <div class="row">
+    <div class="box b3">
+      <div class="t">store.js　数据层</div>
+      <div class="d">localStorage 读写 · 表单校验 · 增删改查 · 组合搜索 · 演示数据<br><b>不依赖 DOM</b></div>
+    </div>
+    <div class="box b3">
+      <div class="t">view.js　模板层</div>
+      <div class="d">数据 → HTML 字符串 · 所有插值经 <span class="k">escapeHtml</span><br><b>不碰 DOM、不读存储</b></div>
+    </div>
+  </div>
+  <div class="arrow">▼ 依赖</div>
+
+  <div class="box b3">
+    <div class="t">utils.js　工具层</div>
+    <div class="d">HTML 转义 · 日期解析与友好化 · 状态文案映射 · 防抖<br><b>纯函数</b></div>
+  </div>
+  <div class="arrow">▼ 持久化</div>
+
+  <div class="box b4">
+    <div class="t">localStorage</div>
+    <div class="d"><span class="k">lf_items_v1</span> 信息列表　·　<span class="k">lf_owner_v1</span> 本机发布者标识　|　不可用时降级为内存存储</div>
+  </div>
+
+  <div class="note">
+    <div class="tag">✅ 可被单元测试直接引用：utils / store / view</div>
+    <div class="tag">🧪 由浏览器人工走查覆盖：app 的渲染与事件</div>
+  </div>
+
+  <div class="legend">
+    <b>61 个用例覆盖</b>：工具函数 10 · 表单校验 11 · 数据读写 20 · 状态与搜索 11 · 演示数据 5 · 其它 4
+  </div>
+</div></body></html>

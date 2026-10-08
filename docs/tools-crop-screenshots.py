@@ -13,6 +13,9 @@ def main():
     for name in sorted(os.listdir(SRC)):
         if not name.lower().endswith(".png"):
             continue
+        if name.startswith("diagram"):
+            print(f"skip  {name}（流程图/架构图由 tools-crop-diagrams.py 处理）")
+            continue
         path = os.path.join(SRC, name)
         with Image.open(path) as im:
             w, h = im.size
